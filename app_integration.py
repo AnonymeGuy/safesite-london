@@ -25,7 +25,7 @@ def load_london_geojson():
         return None
 
 
-# ---------------------------------------------------------------- PART B (Mode 1)
+# ---------------------------------------------------------------- PART B (Mode 1 — Responsive Price Cards, No '...' Cutoff)
 def render_borough_hpi(borough: str, borough_code: str | None, property_type: str = "any"):
     try:
         hpi, source = get_hpi()
@@ -37,28 +37,43 @@ def render_borough_hpi(borough: str, borough_code: str | None, property_type: st
         st.warning(f"No HPI match for '{borough}'.")
         return
 
-    st.subheader(f"💷 Borough Property Pricing & 25%–75% Range: {row['Borough']}")
-    c = st.columns(5)
-    c[0].metric("Average Price", f"£{row['latest_price']:,.0f}")
-    c[1].metric(
-        "25%–75% Typical Range",
-        f"£{row['p25_price'] / 1000:,.0f}k – £{row['p75_price'] / 1000:,.0f}k",
-        help="Estimated 25th to 75th percentile price range across property types & local dispersion in this borough.",
-    )
-    c[2].metric(
-        "1-Yr Growth",
-        f"{row['cagr_1y']:.1%}",
-        f"{(row['cagr_1y'] - med['cagr_1y']) * 100:+.1f} pts vs London",
-    )
-    c[3].metric(
-        "5-Yr Growth / yr",
-        f"{row['cagr_5y']:.1%}",
-        f"{(row['cagr_5y'] - med['cagr_5y']) * 100:+.1f} pts vs London",
-    )
-    c[4].metric(
-        "10-Yr Growth / yr",
-        f"{row['cagr_10y']:.1%}",
-        f"{(row['cagr_10y'] - med['cagr_10y']) * 100:+.1f} pts vs London",
+    st.markdown(f"#### 💷 Borough Property Pricing & 25%–75% Range ({row['Borough']})")
+
+    d1 = (row["cagr_1y"] - med["cagr_1y"]) * 100
+    d5 = (row["cagr_5y"] - med["cagr_5y"]) * 100
+    d10 = (row["cagr_10y"] - med["cagr_10y"]) * 100
+
+    st.markdown(
+        f"""
+        <div class="kpi-grid">
+            <div class="kpi-box">
+                <div class="kpi-label">Average Price</div>
+                <div class="kpi-value">£{row['latest_price']:,.0f}</div>
+                <div class="kpi-sub">Borough mean ({row['latest_date']:%b %Y})</div>
+            </div>
+            <div class="kpi-box" style="border-left-color:#10b981;">
+                <div class="kpi-label">25%–75% Typical Range</div>
+                <div class="kpi-value">£{row['p25_price']/1000:,.0f}k – £{row['p75_price']/1000:,.0f}k</div>
+                <div class="kpi-sub">Entry to upper quartile</div>
+            </div>
+            <div class="kpi-box" style="border-left-color:#6366f1;">
+                <div class="kpi-label">1-Yr Growth</div>
+                <div class="kpi-value">{row['cagr_1y']:.1%}</div>
+                <div class="kpi-sub">{d1:+.1f} pts vs London median</div>
+            </div>
+            <div class="kpi-box" style="border-left-color:#f59e0b;">
+                <div class="kpi-label">5-Yr Growth / yr</div>
+                <div class="kpi-value">{row['cagr_5y']:.1%}</div>
+                <div class="kpi-sub">{d5:+.1f} pts vs London median</div>
+            </div>
+            <div class="kpi-box" style="border-left-color:#0d9488;">
+                <div class="kpi-label">10-Yr Growth / yr</div>
+                <div class="kpi-value">{row['cagr_10y']:.1%}</div>
+                <div class="kpi-sub">{d10:+.1f} pts vs London median</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     chart_df = pd.DataFrame(
@@ -68,11 +83,7 @@ def render_borough_hpi(borough: str, borough_code: str | None, property_type: st
             "75th Percentile (£)": series * (row["p75_price"] / row["latest_price"]),
         }
     )
-    st.line_chart(chart_df, color=["#38bdf8", "#0284c7", "#0d9488"])
-    st.caption(
-        f"Source: Official HM Land Registry UK HPI to {row['latest_date']:%B %Y}. "
-        f"25th–75th percentile range (£{row['p25_price']:,.0f} – £{row['p75_price']:,.0f}) reflects typical entry-to-upper quartile pricing in {row['Borough']}."
-    )
+    st.line_chart(chart_df, color=["#93c5fd", "#0284c7", "#10b981"], height=240)
 
 
 # ---------------------------------------------------------------- PART C (Mode 2)
@@ -125,13 +136,15 @@ def render_ranking(result: se.RankResult, carto_key: str = ""):
     m, df = result.meta, result.ranked
     st.markdown(
         f"""
-        <div class="info-card" style="border-left: 6px solid #0d9488; background:#f0fdfa !important;">
-            <strong style="color:#0f172a !important;">✅ Ranked {m['n_ranked']} Matching London Boroughs</strong>
-            <span style="color:#334155 !important;">(Data to {m['data_month']:%B %Y})</span><br>
-            <span style="font-size:0.9rem; color:#1e293b !important;">
-                Target Budget: <strong>£{m['budget']:,.0f}</strong> | Property Type: <strong>{m['property_type'].title()}</strong> |
-                Active Weights: <code>{m['weights_used']}</code>
-            </span>
+        <div class="ss-card" style="border-left: 5px solid #10b981 !important; background:#ffffff !important;">
+            <div style="font-weight:800; font-size:1.05rem; color:#0f172a !important;">
+                ✅ Ranked {m['n_ranked']} Matching London Boroughs <span style="font-weight:500; color:#64748b !important;">(UK HPI to {m['data_month']:%B %Y})</span>
+            </div>
+            <div style="font-size:0.88rem; color:#334155 !important; margin-top:4px;">
+                Target Budget: <b>£{m['budget']:,.0f}</b> &nbsp;|&nbsp;
+                Property Type: <b>{m['property_type'].title()}</b> &nbsp;|&nbsp;
+                Normalized Weights: <b>{m['weights_used']}</b>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -221,40 +234,18 @@ def render_ranking(result: se.RankResult, carto_key: str = ""):
 def render_mode2(openrouter_key: str, external: pd.DataFrame | None = None, carto_key: str = ""):
     st.markdown(
         """
-        <div class="hero-banner">
-            <h2>🧭 Interactive London Borough Finder</h2>
-            <p style="margin-top:6px;">
-                Select your budget, property type, and lifestyle priorities below—or add custom notes in the text box—to rank
-                all 33 London boroughs with 25th–75th percentile price ranges.
+        <div class="ss-card" style="background:linear-gradient(135deg, #142438 0%, #1e3a8a 100%) !important; border:none !important;">
+            <h2 style="margin:0; color:#ffffff !important;">⚖️ SafeSite Borough Shortlist & Comparison</h2>
+            <p style="margin:6px 0 0 0; color:#e2e8f0 !important; font-size:0.95rem;">
+                Configure your purchase budget, property type, and risk priorities below—or describe your ideal neighbourhood in the text box—to rank all 33 London boroughs.
             </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    with st.expander("🤖 How the Scoring Engine & AI Work (What You Can Ask)", expanded=False):
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(
-                """
-                **✅ What the Model Can Do:**
-                * **Rank all 33 London Boroughs** using official HM Land Registry sales data (`any`, `flat`, `terraced`, `semi-detached`, `detached`).
-                * **Estimate 25%–75% Price Ranges:** Shows both the borough average and the interquartile (25th to 75th percentile) price range so you know entry-level vs. upper-tier pricing.
-                * **Weight Your Priorities:** Combine Budget Fit, Historical Price Growth (1–10yr), Safety, Public Transport, and Flood Risk.
-                * **Understand Natural Language Notes:** In the text box below, write things like *"I want strong long-term investment growth and low crime, I have a car so transport doesn't matter"* and the AI will automatically tune the weights.
-                """
-            )
-        with c2:
-            st.markdown(
-                """
-                **⚠️ What to Keep in Mind:**
-                * **Residential Sales Only:** UK HPI tracks property purchases, not monthly rent or commercial offices.
-                * **Street vs. Borough:** Mode 2 ranks whole boroughs. Once you spot a top borough, switch to **📍 Address Analysis (Mode 1)** to inspect specific streets, 90-day air pollution, flood zones, and categorized shops!
-                """
-            )
-
     with st.form("borough_finder_form"):
-        st.subheader("1️⃣ Budget & Property Type")
+        st.markdown("#### 1️⃣ Budget & Property Type")
         col_b, col_p = st.columns([2, 2])
         with col_b:
             budget_gbp = st.number_input(
@@ -263,7 +254,6 @@ def render_mode2(openrouter_key: str, external: pd.DataFrame | None = None, cart
                 max_value=5000000,
                 value=550000,
                 step=25000,
-                help="Boroughs where your budget reaches at least the 25th percentile (~75% of typical price) will be included.",
             )
         with col_p:
             prop_label_map = {
@@ -276,32 +266,32 @@ def render_mode2(openrouter_key: str, external: pd.DataFrame | None = None, cart
             prop_choice = st.selectbox("Property Type", list(prop_label_map.keys()), index=2)
             property_type = prop_label_map[prop_choice]
 
-        st.subheader("2️⃣ What Matters Most to You? (Tick & Adjust Importance)")
+        st.markdown("#### 2️⃣ Risk & Lifestyle Priorities (Tick & Set Importance 1–10)")
         p_cols = st.columns(5)
         with p_cols[0]:
             chk_budget = st.checkbox("💷 Budget Fit", value=True)
             w_budget = st.slider("Budget weight", 1, 10, 8, label_visibility="collapsed")
         with p_cols[1]:
-            chk_safety = st.checkbox("🛡️ Low Crime / Safety", value=True)
+            chk_safety = st.checkbox("🛡️ Safety & Low Crime", value=True)
             w_safety = st.slider("Safety weight", 1, 10, 8, label_visibility="collapsed")
         with p_cols[2]:
-            chk_trend = st.checkbox("📈 Price Growth Trend", value=True)
+            chk_trend = st.checkbox("📈 Price Growth", value=True)
             w_trend = st.slider("Growth weight", 1, 10, 5, label_visibility="collapsed")
         with p_cols[3]:
-            chk_transport = st.checkbox("🚇 Tube & Rail Links", value=False)
+            chk_transport = st.checkbox("🚇 Transport Links", value=False)
             w_transport = st.slider("Transport weight", 1, 10, 6, label_visibility="collapsed")
         with p_cols[4]:
             chk_flood = st.checkbox("🌊 Low Flood Risk", value=False)
             w_flood = st.slider("Flood weight", 1, 10, 5, label_visibility="collapsed")
 
-        st.subheader("3️⃣ Additional Context or Special Requests (Optional AI Refinement)")
+        st.markdown("#### 3️⃣ Additional Context or Special Requests (Optional AI Refinement)")
         extra_notes = st.text_area(
-            "Tell the AI anything else about your situation (optional):",
-            placeholder="e.g. We have a car so we don't need the Tube, we just want the safest area with the best value for £500k...",
+            "Add any extra requirements or context (optional — uses the OpenRouter API Key in the left sidebar):",
+            placeholder="e.g. We have a car so we don't need the Tube, we just want the safest and greenest borough for £500k...",
             height=80,
         )
 
-        submitted = st.form_submit_button("🔍 Find & Rank Best London Boroughs", use_container_width=True)
+        submitted = st.form_submit_button("🔍 Rank Best London Boroughs", use_container_width=True)
 
     if submitted or "mode2_reqs" not in st.session_state:
         weights = {}
@@ -325,12 +315,15 @@ def render_mode2(openrouter_key: str, external: pd.DataFrame | None = None, cart
         }
 
         ai_note = None
-        if submitted and extra_notes.strip() and openrouter_key:
-            with st.spinner("🤖 AI is refining your criteria from your custom notes..."):
-                try:
-                    base_req, ai_note = _refine_with_llm(base_req, extra_notes.strip(), openrouter_key)
-                except Exception as e:
-                    st.warning(f"Used your form settings directly (AI refinement skipped: {e})")
+        if submitted and extra_notes.strip():
+            if openrouter_key:
+                with st.spinner("🤖 AI is refining your criteria..."):
+                    try:
+                        base_req, ai_note = _refine_with_llm(base_req, extra_notes.strip(), openrouter_key)
+                    except Exception as e:
+                        st.warning(f"Used your form settings directly (AI refinement skipped: {e})")
+            else:
+                st.info("💡 Enter an OpenRouter API Key in the left sidebar to enable AI refinement of your extra notes. Ranking using your form sliders directly.")
 
         st.session_state.mode2_reqs = base_req
         st.session_state.mode2_ai_note = ai_note
