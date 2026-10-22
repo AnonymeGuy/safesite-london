@@ -13,11 +13,10 @@ from placeholder_scores import placeholder_external_scores
 
 st.set_page_config(page_title="SafeSite — Location Intelligence", page_icon="🛡️", layout="wide")
 
-# ------------------------------------------------------------------ SafeSite Dashboard CSS (#142438 Theme + Responsive Cards + Zero Black-on-Black)
+# ------------------------------------------------------------------ SafeSite Dashboard CSS (#142438 Theme + Spinner Contrast Fix)
 st.markdown(
     """
     <style>
-    /* Main App Canvas */
     .stApp {
         background-color: #f1f5f9 !important;
         color: #0f172a !important;
@@ -32,7 +31,29 @@ st.markdown(
         color: #0f172a !important;
     }
 
-    /* Deep Navy Sidebar (#142438 from reference HTML) */
+    /* FIX WHITE-ON-WHITE LOADING SPINNER & STATUS WIDGET */
+    div[data-testid="stSpinner"],
+    div[data-testid="stSpinner"] > div,
+    div[data-testid="stSpinner"] p,
+    div[data-testid="stSpinner"] span {
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        background-color: #e0f2fe !important;
+        border-radius: 10px !important;
+        padding: 6px 14px !important;
+    }
+    div[data-testid="stSpinner"] svg {
+        stroke: #0284c7 !important;
+        color: #0284c7 !important;
+    }
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stStatusWidget"] * {
+        background-color: #142438 !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+    }
+
+    /* Deep Navy Sidebar (#142438) */
     section[data-testid="stSidebar"] {
         background-color: #142438 !important;
         border-right: 1px solid #1e3a5f !important;
@@ -51,7 +72,7 @@ st.markdown(
         transition: background 0.2s;
     }
 
-    /* Fix Black-on-Black inputs on Page 1, Page 2, and Sidebar (Force White Input Boxes + Dark Text) */
+    /* Force White Input Boxes + Dark Text */
     input, textarea, [data-baseweb="input"], [data-baseweb="base-input"], [data-baseweb="textarea"] {
         background-color: #ffffff !important;
         color: #0f172a !important;
@@ -94,7 +115,7 @@ st.markdown(
         color: #0f172a !important;
     }
 
-    /* Responsive KPI Grid — Never truncates with '...' */
+    /* Responsive KPI Grid */
     .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
@@ -131,7 +152,7 @@ st.markdown(
         margin-top: 4px;
     }
 
-    /* Risk Category Mini Cards (2x3 / 2x4 Grid under Map) */
+    /* Risk Category Mini Cards */
     .risk-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
@@ -217,7 +238,6 @@ st.markdown(
         display: flex;
         justify-content: space-between;
     }
-    /* Expander & Tabs Contrast */
     details summary {
         background-color: #ffffff !important;
         color: #0f172a !important;
@@ -251,17 +271,17 @@ def secret(name, default=""):
 
 CARTO_KEY = secret("CARTO_KEY", "cb1_4iwc_1_bce17659066bca4d710f938b")
 
-# ------------------------------------------------------------------ Sidebar (#142438 SafeSite Design)
+# ------------------------------------------------------------------ Sidebar
 st.sidebar.markdown(
     """
-    <div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid #1e3a5f;">
-        <div style="background:#3b82f6; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🛡️</div>
-        <div>
-            <div style="font-weight:800; font-size:1.15rem; color:#ffffff;">SafeSite</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Smarter decisions. Safer places.</div>
-        </div>
-    </div>
-    """,
+<div style="display:flex; align-items:center; gap:10px; padding-bottom:10px; border-bottom:1px solid #1e3a5f;">
+<div style="background:#3b82f6; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🛡️</div>
+<div>
+<div style="font-weight:800; font-size:1.15rem; color:#ffffff;">SafeSite</div>
+<div style="font-size:0.75rem; color:#94a3b8;">Smarter decisions. Safer places.</div>
+</div>
+</div>
+""",
     unsafe_allow_html=True,
 )
 st.sidebar.write("")
@@ -277,33 +297,24 @@ user_or_key = st.sidebar.text_input(
     value=secret("OPENROUTER_KEY", ""),
     type="password",
     placeholder="sk-or-v1-...",
-    help="Enter your OpenRouter API key to enable AI refinement of free-text notes on the Compare Boroughs page.",
+    help="Optional: Enter your OpenRouter key for LLM parsing, or leave blank to use SafeSite's built-in Smart Context Parser.",
 )
 OPENROUTER_KEY = user_or_key.strip()
-
-if mode == "⚖️ Compare Boroughs (Shortlist)":
-    use_placeholders = st.sidebar.checkbox(
-        "Include Borough Safety / Transport / Flood Scores",
-        value=True,
-        help="Connects borough-level safety, transport, and flood scores so your priority checkboxes rank all 33 boroughs.",
-    )
-else:
-    use_placeholders = False
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
-    <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.5;">
-        <strong style="color:#ffffff;">Data sources ⓘ</strong><br>
-        We use trusted, official sources from London and the UK:<br>
-        • HM Land Registry UK HPI<br>
-        • Metropolitan Police (police.uk)<br>
-        • TfL Unified API (StopPoint & AirQuality)<br>
-        • Open-Meteo CAMS & DEFRA Noise<br>
-        • Environment Agency Flood API<br>
-        • OpenStreetMap & ArcGIS POI
-    </div>
-    """,
+<div style="font-size:0.78rem; color:#cbd5e1; line-height:1.5;">
+<strong style="color:#ffffff;">Data sources ⓘ</strong><br>
+We use trusted, official sources from London and the UK:<br>
+• HM Land Registry UK HPI<br>
+• Metropolitan Police (police.uk)<br>
+• TfL Unified API (StopPoint & AirQuality)<br>
+• Open-Meteo CAMS & DEFRA Noise<br>
+• Environment Agency Flood API<br>
+• OpenStreetMap & ArcGIS POI
+</div>
+""",
     unsafe_allow_html=True,
 )
 
@@ -326,9 +337,94 @@ def _score_color(score: int) -> str:
     return "#ef4444"      # Red
 
 
-@st.cache_data(ttl=3600)
+def compute_overall_verdict(
+    usage_mode: str,
+    safety_score: int,
+    transport_score: int,
+    schools_health_score: int,
+    noise_air_score: int,
+    env_green_score: int,
+    hazards_score: int,
+    amenities_score: int,
+) -> tuple[int, str, str]:
+    """
+    Computes a realistic, risk-sensitive Overall Score and tailored explanation.
+    For Residential use, critically low Safety (<35) or Flood/Hazards (<35) applies
+    a non-linear penalty and caps the maximum possible score so high transit cannot hide severe risk.
+    """
+    is_residential = "Residential" in usage_mode
+
+    if is_residential:
+        # Safety is the #1 weight (32%) for residential living
+        raw = (
+            safety_score * 0.32
+            + hazards_score * 0.16
+            + noise_air_score * 0.14
+            + schools_health_score * 0.14
+            + transport_score * 0.12
+            + env_green_score * 0.12
+        )
+        # Non-linear critical risk penalty & hard caps for Residential
+        if safety_score < 25:
+            raw -= (35 - safety_score) * 0.85
+            overall = int(min(48, max(15, round(raw))))
+        elif safety_score < 40:
+            raw -= (45 - safety_score) * 0.55
+            overall = int(min(58, max(20, round(raw))))
+        elif hazards_score < 35:
+            overall = int(min(54, max(20, round(raw))))
+        else:
+            overall = int(min(98, max(20, round(raw))))
+    else:
+        # Commercial / Retail prioritizes footfall, transit, and local shops
+        raw = (
+            transport_score * 0.28
+            + amenities_score * 0.24
+            + safety_score * 0.18
+            + hazards_score * 0.12
+            + noise_air_score * 0.10
+            + env_green_score * 0.08
+        )
+        overall = int(min(98, max(25, round(raw))))
+
+    # Label & honest explanation
+    if overall >= 76:
+        label = "Excellent"
+    elif overall >= 62:
+        label = "Good"
+    elif overall >= 48:
+        label = "Mixed / Caution"
+    else:
+        label = "High Risk / Caution"
+
+    if is_residential and safety_score < 35:
+        desc = (
+            f"<b>Caution for residential use:</b> Exceptional transit ({transport_score}/100) and amenities ({amenities_score}/100), "
+            f"but the overall score is capped due to high street-crime volume (<b>Safety: {safety_score}/100</b>). "
+            f"Better suited to commercial/retail or upper-floor gated units."
+        )
+    elif is_residential and safety_score < 50:
+        desc = (
+            f"<b>Mixed residential suitability:</b> Strong transport ({transport_score}/100) and schools ({schools_health_score}/100), "
+            f"but elevated street crime (<b>Safety: {safety_score}/100</b>) and noise/air ({noise_air_score}/100) require street-by-street care."
+        )
+    elif hazards_score < 45:
+        desc = (
+            f"<b>Flood/Hazard caution:</b> Good local amenities and transit ({transport_score}/100), "
+            f"but proximity to flood zones (<b>Hazards: {hazards_score}/100</b>) requires property-level flood due diligence."
+        )
+    else:
+        desc = (
+            f"Well-suited for {usage_mode.split()[-1].lower()} use, balancing safety ({safety_score}/100), "
+            f"transit connectivity ({transport_score}/100), and environmental quality ({noise_air_score}/100)."
+        )
+
+    return overall, label, desc
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def geocode_and_resolve_borough(address):
-    geolocator = Nominatim(user_agent="safesite_london_intelligence_v6")
+    geolocator = Nominatim(user_agent="safesite_london_intelligence_v8")
     try:
         loc = geolocator.geocode(f"{address}, London, UK", timeout=10)
         if not loc:
@@ -716,7 +812,7 @@ def _cached_osm(lat, lon, radius=800):
         "https://overpass.kumi.systems/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     ]
-    headers = {"User-Agent": "SafeSiteLondon/6.0"}
+    headers = {"User-Agent": "SafeSiteLondon/8.0"}
 
     for url in endpoints:
         try:
@@ -828,17 +924,16 @@ if mode == "📍 Overview & Address Audit":
         hazards_score = flood["score"]
         amenities_score = min(96, 45 + n_super * 4 + min(30, (n_food + n_retail) // 3))
 
-        overall_score = int(
-            round(
-                safety_score * 0.22
-                + transport_score * 0.20
-                + schools_health_score * 0.16
-                + noise_air_score * 0.14
-                + env_green_score * 0.14
-                + hazards_score * 0.14
-            )
+        overall_score, overall_label, overall_desc = compute_overall_verdict(
+            usage_mode,
+            safety_score,
+            transport_score,
+            schools_health_score,
+            noise_air_score,
+            env_green_score,
+            hazards_score,
+            amenities_score,
         )
-        overall_label = "Excellent" if overall_score >= 78 else ("Good" if overall_score >= 62 else "Moderate")
         overall_color = _score_color(overall_score)
 
         left_col, right_col = st.columns([1.65, 1.05], gap="medium")
@@ -912,56 +1007,41 @@ if mode == "📍 Overview & Address Audit":
 
             components.html(m.get_root().render(), height=390)
             st.markdown(
-                """
-                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 14px; margin-top:-8px; margin-bottom:14px; font-size:0.8rem; color:#334155; display:flex; flex-wrap:wrap; gap:14px;">
-                    <span>⚫ <b>Target Address</b></span>
-                    <span>🔵 <b>Tube/Rail (800m — hover for lines)</b></span>
-                    <span>🟠 <b>Bus Stops (500m — hover for route #)</b></span>
-                    <span>🟣 <b>Schools (800m)</b></span>
-                    <span>🟢 <b>Green Space (800m)</b></span>
-                </div>
-                """,
+                '<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 14px; margin-top:-8px; margin-bottom:14px; font-size:0.8rem; color:#334155; display:flex; flex-wrap:wrap; gap:14px;">'
+                '<span>⚫ <b>Target Address</b></span>'
+                '<span>🔵 <b>Tube/Rail (800m — hover for lines)</b></span>'
+                '<span>🟠 <b>Bus Stops (500m — hover for route #)</b></span>'
+                '<span>🟣 <b>Schools (800m)</b></span>'
+                '<span>🟢 <b>Green Space (800m)</b></span>'
+                '</div>',
                 unsafe_allow_html=True,
             )
 
             dash_offset = 251.2 * (1 - overall_score / 100.0)
-            st.markdown(
-                f"""
-                <div class="ss-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-                    <div style="flex:1; min-width:240px;">
-                        <div style="font-size:1.35rem; font-weight:800; color:#0f172a;">{html.escape(address_query.title())}</div>
-                        <div style="margin:6px 0;">
-                            <span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:700;">
-                                {usage_mode}
-                            </span>
-                            <span style="background:#f1f5f9; color:#334155; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:600; margin-left:6px;">
-                                Borough: {borough}
-                            </span>
-                        </div>
-                        <div style="font-size:0.84rem; color:#64748b; margin-top:6px;">{html.escape(full_address)}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:16px; border-left:1px solid #e2e8f0; padding-left:20px; flex:1; min-width:260px;">
-                        <svg width="86" height="86" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="40" stroke="#e2e8f0" stroke-width="10" fill="none"/>
-                            <circle cx="50" cy="50" r="40" stroke="{overall_color}" stroke-width="10" fill="none"
-                                stroke-dasharray="251.2" stroke-dashoffset="{dash_offset:.1f}"
-                                stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                            <text x="50" y="48" text-anchor="middle" font-size="22" font-weight="800" fill="#0f172a">{overall_score}</text>
-                            <text x="50" y="64" text-anchor="middle" font-size="11" fill="#64748b">/100</text>
-                        </svg>
-                        <div>
-                            <div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Overall Score</div>
-                            <div style="font-size:1.2rem; font-weight:800; color:{overall_color};">{overall_label}</div>
-                            <div style="font-size:0.82rem; color:#475569; line-height:1.35;">
-                                Well-suited for {usage_mode.split()[-1].lower()} use, combining transit ({transport_score}/100),
-                                safety ({safety_score}/100), and environment ({noise_air_score}/100).
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            summary_html = (
+                f'<div class="ss-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">'
+                f'<div style="flex:1; min-width:240px;">'
+                f'<div style="font-size:1.35rem; font-weight:800; color:#0f172a;">{html.escape(address_query.title())}</div>'
+                f'<div style="margin:6px 0;">'
+                f'<span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:700;">{usage_mode}</span>'
+                f'<span style="background:#f1f5f9; color:#334155; padding:4px 10px; border-radius:6px; font-size:0.8rem; font-weight:600; margin-left:6px;">Borough: {borough}</span>'
+                f'</div>'
+                f'<div style="font-size:0.84rem; color:#64748b; margin-top:6px;">{html.escape(full_address)}</div>'
+                f'</div>'
+                f'<div style="display:flex; align-items:center; gap:16px; border-left:1px solid #e2e8f0; padding-left:20px; flex:1; min-width:260px;">'
+                f'<svg width="86" height="86" viewBox="0 0 100 100">'
+                f'<circle cx="50" cy="50" r="40" stroke="#e2e8f0" stroke-width="10" fill="none"/>'
+                f'<circle cx="50" cy="50" r="40" stroke="{overall_color}" stroke-width="10" fill="none" stroke-dasharray="251.2" stroke-dashoffset="{dash_offset:.1f}" stroke-linecap="round" transform="rotate(-90 50 50)"/>'
+                f'<text x="50" y="48" text-anchor="middle" font-size="22" font-weight="800" fill="#0f172a">{overall_score}</text>'
+                f'<text x="50" y="64" text-anchor="middle" font-size="11" fill="#64748b">/100</text>'
+                f'</svg>'
+                f'<div>'
+                f'<div style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Overall Score</div>'
+                f'<div style="font-size:1.2rem; font-weight:800; color:{overall_color};">{overall_label}</div>'
+                f'<div style="font-size:0.82rem; color:#475569; line-height:1.35;">{overall_desc}</div>'
+                f'</div></div></div>'
             )
+            st.markdown(summary_html, unsafe_allow_html=True)
 
             st.markdown("#### Risk & Quality Categories")
             rc_items = [
@@ -973,23 +1053,21 @@ if mode == "📍 Overview & Address Audit":
                 ("🌊", "#e0f2fe", "Natural Hazards", hazards_score),
                 ("🛒", "#fce7f3", "Local Shops & Dining", amenities_score),
             ]
-            cards_html = '<div class="risk-grid">'
+            cards_parts = ['<div class="risk-grid">']
             for icon, ibg, title, sc in rc_items:
                 sc_col = _score_color(sc)
-                cards_html += f"""
-                <div class="risk-card">
-                    <div class="risk-header">
-                        <div class="risk-icon" style="background:{ibg};">{icon}</div>
-                        <div>
-                            <div class="risk-title">{title}</div>
-                            <div class="risk-score">{sc} <span style="font-size:0.78rem; font-weight:500; color:#64748b;">/100</span></div>
-                        </div>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill" style="width:{sc}%; background:{sc_col};"></div></div>
-                </div>
-                """
-            cards_html += "</div>"
-            st.markdown(cards_html, unsafe_allow_html=True)
+                cards_parts.append(
+                    f'<div class="risk-card">'
+                    f'<div class="risk-header">'
+                    f'<div class="risk-icon" style="background:{ibg};">{icon}</div>'
+                    f'<div><div class="risk-title">{title}</div>'
+                    f'<div class="risk-score">{sc} <span style="font-size:0.78rem; font-weight:500; color:#64748b;">/100</span></div></div>'
+                    f'</div>'
+                    f'<div class="bar-track"><div class="bar-fill" style="width:{sc}%; background:{sc_col};"></div></div>'
+                    f'</div>'
+                )
+            cards_parts.append("</div>")
+            st.markdown("".join(cards_parts), unsafe_allow_html=True)
 
             render_borough_hpi(borough, borough_code)
 
@@ -998,39 +1076,22 @@ if mode == "📍 Overview & Address Audit":
 
             c_col = _score_color(safety_score)
             st.markdown(
-                f"""
-                <div class="ss-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="risk-icon" style="background:#fef3c7;">🛡️</div>
-                            <span style="font-weight:800; font-size:1.05rem;">Safety & Crime</span>
-                        </div>
-                        <span style="font-weight:800; font-size:1.05rem; color:{c_col};">{safety_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>
-                    </div>
-                    <div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{safety_score}%; background:{c_col};"></div></div>
-                    <p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">{crime_info['summary']}</p>
-                    <div class="detail-row">
-                        <span class="detail-label">🛡️ Est. crime rate (per 1,000 residents)</span>
-                        <span class="detail-val">{crime_info['rate_per_1k']} <span style="font-weight:400; color:#64748b;">(London avg. 52)</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🏠 Burglary rate (per 1,000 residents)</span>
-                        <span class="detail-val">{crime_info['burglary_1k']} <span style="font-weight:400; color:#64748b;">(London avg. 14)</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🚨 Violent & severe offences (latest mo)</span>
-                        <span class="detail-val">{severe if severe is not None else 0} <span style="font-weight:400; color:#64748b;">({crime_info.get('severe_pct', 0):.0f}% of total)</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">📅 Total reported incidents (1 mi radius)</span>
-                        <span class="detail-val">{len(crimes) if crimes is not None else 'N/A'} / mo <span style="font-weight:400; color:#64748b;">(Median ~420)</span></span>
-                    </div>
-                    <div class="source-footer">
-                        <span>ⓘ Data source: Metropolitan Police (police.uk)</span>
-                        <span style="color:#0284c7 !important; font-weight:600;">Street-level API ↗</span>
-                    </div>
-                </div>
-                """,
+                f'<div class="ss-card">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
+                f'<div style="display:flex; align-items:center; gap:10px;">'
+                f'<div class="risk-icon" style="background:#fef3c7;">🛡️</div>'
+                f'<span style="font-weight:800; font-size:1.05rem;">Safety & Crime</span>'
+                f'</div>'
+                f'<span style="font-weight:800; font-size:1.05rem; color:{c_col};">{safety_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>'
+                f'</div>'
+                f'<div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{safety_score}%; background:{c_col};"></div></div>'
+                f'<p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">{crime_info["summary"]}</p>'
+                f'<div class="detail-row"><span class="detail-label">🛡️ Est. crime rate (per 1,000 residents)</span><span class="detail-val">{crime_info["rate_per_1k"]} <span style="font-weight:400; color:#64748b;">(London avg. 52)</span></span></div>'
+                f'<div class="detail-row"><span class="detail-label">🏠 Burglary rate (per 1,000 residents)</span><span class="detail-val">{crime_info["burglary_1k"]} <span style="font-weight:400; color:#64748b;">(London avg. 14)</span></span></div>'
+                f'<div class="detail-row"><span class="detail-label">🚨 Violent & severe offences (latest mo)</span><span class="detail-val">{severe if severe is not None else 0} <span style="font-weight:400; color:#64748b;">({crime_info.get("severe_pct", 0):.0f}% of total)</span></span></div>'
+                f'<div class="detail-row"><span class="detail-label">📅 Total reported incidents (1 mi radius)</span><span class="detail-val">{len(crimes) if crimes is not None else "N/A"} / mo <span style="font-weight:400; color:#64748b;">(Median ~420)</span></span></div>'
+                f'<div class="source-footer"><span>ⓘ Data source: Metropolitan Police (police.uk)</span><span style="color:#0284c7 !important; font-weight:600;">Street-level API ↗</span></div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1038,88 +1099,45 @@ if mode == "📍 Overview & Address Audit":
             avg_aq = air_data.get("avg") or {"no2_ugm3": 28.0, "pm25_ugm3": 10.5, "pm10_ugm3": 18.2}
             live_aq = air_data.get("live") or {"band": "Low", "summary": "Good air quality across London."}
             st.markdown(
-                f"""
-                <div class="ss-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="risk-icon" style="background:#ffedd5;">🔊</div>
-                            <span style="font-weight:800; font-size:1.05rem;">Noise & Air Quality</span>
-                        </div>
-                        <span style="font-weight:800; font-size:1.05rem; color:{na_col};">{noise_air_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>
-                    </div>
-                    <div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{noise_air_score}%; background:{na_col};"></div></div>
-                    <p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">
-                        Daytime noise is <b>{noise['db']} dB</b> ({noise['level'].lower()}).
-                        90-day average NO₂ is <b>{avg_no2:.1f} µg/m³</b> (UK legal limit: 40 µg/m³). Live TfL status today: <b>{live_aq['band']}</b>.
-                    </p>
-                    <div class="detail-row">
-                        <span class="detail-label">🔊 Average noise level (daytime Lden)</span>
-                        <span class="detail-val">{noise['db']} dB <span style="font-weight:400; color:#64748b;">(London avg. 56 dB)</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🌬️ Air quality (NO₂ 90-day mean)</span>
-                        <span class="detail-val">{avg_aq['no2_ugm3']:.1f} µg/m³ <span style="font-weight:400; color:#64748b;">(London avg. 32)</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🌫️ Fine particulates (PM₂.₅ / PM₁₀ mean)</span>
-                        <span class="detail-val">{avg_aq['pm25_ugm3']:.1f} / {avg_aq['pm10_ugm3']:.1f} µg/m³</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">📡 Live TfL AirQuality Band Today</span>
-                        <span class="detail-val">{live_aq['band']}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🚗 Major noise sources</span>
-                        <span class="detail-val">{noise['sources']}</span>
-                    </div>
-                    <div class="source-footer">
-                        <span>ⓘ Source: TfL AirQuality, Open-Meteo CAMS & DEFRA Noise</span>
-                        <span style="color:#0284c7 !important; font-weight:600;">Verified ↗</span>
-                    </div>
-                </div>
-                """,
+                f'<div class="ss-card">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
+                f'<div style="display:flex; align-items:center; gap:10px;">'
+                f'<div class="risk-icon" style="background:#ffedd5;">🔊</div>'
+                f'<span style="font-weight:800; font-size:1.05rem;">Noise & Air Quality</span>'
+                f'</div>'
+                f'<span style="font-weight:800; font-size:1.05rem; color:{na_col};">{noise_air_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>'
+                f'</div>'
+                f'<div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{noise_air_score}%; background:{na_col};"></div></div>'
+                f'<p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">Daytime noise is <b>{noise["db"]} dB</b> ({noise["level"].lower()}). 90-day average NO₂ is <b>{avg_no2:.1f} µg/m³</b> (UK legal limit: 40 µg/m³). Live TfL status today: <b>{live_aq["band"]}</b>.</p>'
+                f'<div class="detail-row"><span class="detail-label">🔊 Average noise level (daytime Lden)</span><span class="detail-val">{noise["db"]} dB <span style="font-weight:400; color:#64748b;">(London avg. 56 dB)</span></span></div>'
+                f'<div class="detail-row"><span class="detail-label">🌬️ Air quality (NO₂ 90-day mean)</span><span class="detail-val">{avg_aq["no2_ugm3"]:.1f} µg/m³ <span style="font-weight:400; color:#64748b;">(London avg. 32)</span></span></div>'
+                f'<div class="detail-row"><span class="detail-label">🌫️ Fine particulates (PM₂.₅ / PM₁₀ mean)</span><span class="detail-val">{avg_aq["pm25_ugm3"]:.1f} / {avg_aq["pm10_ugm3"]:.1f} µg/m³</span></div>'
+                f'<div class="detail-row"><span class="detail-label">📡 Live TfL AirQuality Band Today</span><span class="detail-val">{live_aq["band"]}</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🚗 Major noise sources</span><span class="detail-val">{noise["sources"]}</span></div>'
+                f'<div class="source-footer"><span>ⓘ Source: TfL AirQuality, Open-Meteo CAMS & DEFRA Noise</span><span style="color:#0284c7 !important; font-weight:600;">Verified ↗</span></div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
             hz_col = _score_color(hazards_score)
             st.markdown(
-                f"""
-                <div class="ss-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="risk-icon" style="background:#e0f2fe;">🌊</div>
-                            <span style="font-weight:800; font-size:1.05rem;">Natural Hazards & Flood</span>
-                        </div>
-                        <span style="font-weight:800; font-size:1.05rem; color:{hz_col};">{hazards_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>
-                    </div>
-                    <div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{hazards_score}%; background:{hz_col};"></div></div>
-                    <p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">{flood['summary']}</p>
-                    <div class="detail-row">
-                        <span class="detail-label">🌊 Flood risk rating</span>
-                        <span class="detail-val">{flood['risk_label']}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">⚠️ Active EA flood alerts (3 km)</span>
-                        <span class="detail-val">{flood['active_count']} active</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🗺️ Mapped EA flood zones (within 1 km)</span>
-                        <span class="detail-val">{flood['zone_count']} zone(s)</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🌡️ Urban heatwave risk</span>
-                        <span class="detail-val">{flood['heatwave_risk']}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🪨 Ground stability</span>
-                        <span class="detail-val">{flood['ground_stability']}</span>
-                    </div>
-                    <div class="source-footer">
-                        <span>ⓘ Data source: UK Environment Agency (gov.uk)</span>
-                        <span style="color:#0284c7 !important; font-weight:600;">Flood API ↗</span>
-                    </div>
-                </div>
-                """,
+                f'<div class="ss-card">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
+                f'<div style="display:flex; align-items:center; gap:10px;">'
+                f'<div class="risk-icon" style="background:#e0f2fe;">🌊</div>'
+                f'<span style="font-weight:800; font-size:1.05rem;">Natural Hazards & Flood</span>'
+                f'</div>'
+                f'<span style="font-weight:800; font-size:1.05rem; color:{hz_col};">{hazards_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>'
+                f'</div>'
+                f'<div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{hazards_score}%; background:{hz_col};"></div></div>'
+                f'<p style="font-size:0.84rem; color:#475569 !important; margin:8px 0 12px 0;">{flood["summary"]}</p>'
+                f'<div class="detail-row"><span class="detail-label">🌊 Flood risk rating</span><span class="detail-val">{flood["risk_label"]}</span></div>'
+                f'<div class="detail-row"><span class="detail-label">⚠️ Active EA flood alerts (3 km)</span><span class="detail-val">{flood["active_count"]} active</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🗺️ Mapped EA flood zones (within 1 km)</span><span class="detail-val">{flood["zone_count"]} zone(s)</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🌡️ Urban heatwave risk</span><span class="detail-val">{flood["heatwave_risk"]}</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🪨 Ground stability</span><span class="detail-val">{flood["ground_stability"]}</span></div>'
+                f'<div class="source-footer"><span>ⓘ Data source: UK Environment Agency (gov.uk)</span><span style="color:#0284c7 !important; font-weight:600;">Flood API ↗</span></div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1127,46 +1145,23 @@ if mode == "📍 Overview & Address Audit":
             all_bus_lines = sorted({ln for b in bus for ln in b["lines"]})
             tr_col = _score_color(transport_score)
             st.markdown(
-                f"""
-                <div class="ss-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="risk-icon" style="background:#e0f2fe;">🚇</div>
-                            <span style="font-weight:800; font-size:1.05rem;">Transit Lines & Walkability</span>
-                        </div>
-                        <span style="font-weight:800; font-size:1.05rem; color:{tr_col};">{transport_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>
-                    </div>
-                    <div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{transport_score}%; background:{tr_col};"></div></div>
-                    <div class="detail-row">
-                        <span class="detail-label">🚇 Tube/Rail stations (800m)</span>
-                        <span class="detail-val">{len(rail)} station(s)</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🛤️ Tube/Rail lines served</span>
-                        <span class="detail-val">{', '.join(all_tube_lines[:6]) if all_tube_lines else 'None within 800m'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🚌 Bus stops (500m radius)</span>
-                        <span class="detail-val">{len(bus)} stop(s)</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🔢 Bus routes (500m)</span>
-                        <span class="detail-val">{', '.join(all_bus_lines[:10]) if all_bus_lines else 'Local routes'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🎓 Schools / 🌳 Parks (800m)</span>
-                        <span class="detail-val">{len(schools)} schools • {len(parks)} parks</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">🛒 Groceries / 🍽️ Dining / 💊 Health</span>
-                        <span class="detail-val">{n_super} • {n_food} • {n_health}</span>
-                    </div>
-                    <div class="source-footer">
-                        <span>ⓘ Data source: TfL StopPoint & OpenStreetMap/ArcGIS</span>
-                        <span style="color:#0284c7 !important; font-weight:600;">Live ↗</span>
-                    </div>
-                </div>
-                """,
+                f'<div class="ss-card">'
+                f'<div style="display:flex; justify-content:space-between; align-items:center;">'
+                f'<div style="display:flex; align-items:center; gap:10px;">'
+                f'<div class="risk-icon" style="background:#e0f2fe;">🚇</div>'
+                f'<span style="font-weight:800; font-size:1.05rem;">Transit Lines & Walkability</span>'
+                f'</div>'
+                f'<span style="font-weight:800; font-size:1.05rem; color:{tr_col};">{transport_score}<span style="font-size:0.8rem; color:#64748b;">/100</span></span>'
+                f'</div>'
+                f'<div class="bar-track" style="margin:10px 0;"><div class="bar-fill" style="width:{transport_score}%; background:{tr_col};"></div></div>'
+                f'<div class="detail-row"><span class="detail-label">🚇 Tube/Rail stations (800m)</span><span class="detail-val">{len(rail)} station(s)</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🛤️ Tube/Rail lines served</span><span class="detail-val">{", ".join(all_tube_lines[:6]) if all_tube_lines else "None within 800m"}</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🚌 Bus stops (500m radius)</span><span class="detail-val">{len(bus)} stop(s)</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🔢 Bus routes (500m)</span><span class="detail-val">{", ".join(all_bus_lines[:10]) if all_bus_lines else "Local routes"}</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🎓 Schools / 🌳 Parks (800m)</span><span class="detail-val">{len(schools)} schools • {len(parks)} parks</span></div>'
+                f'<div class="detail-row"><span class="detail-label">🛒 Groceries / 🍽️ Dining / 💊 Health</span><span class="detail-val">{n_super} • {n_food} • {n_health}</span></div>'
+                f'<div class="source-footer"><span>ⓘ Data source: TfL StopPoint & OpenStreetMap/ArcGIS</span><span style="color:#0284c7 !important; font-weight:600;">Live ↗</span></div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
@@ -1250,10 +1245,14 @@ if mode == "📍 Overview & Address Audit":
     elif res:
         st.error("Address not found. Please enter a valid London postcode or street name.")
 
-# ------------------------------------------------------------------ MODE 2
+# ------------------------------------------------------------------ MODE 2: DYNAMIC MULTI-FACTOR BOROUGH SHORTLIST
 else:
+    @st.cache_data(ttl=1800, show_spinner="Syncing live borough Flood & Air Quality feeds...")
+    def get_live_borough_metrics():
+        return placeholder_external_scores(live_refresh=True)
+
     render_mode2(
         OPENROUTER_KEY,
-        external=placeholder_external_scores() if use_placeholders else None,
+        external=get_live_borough_metrics(),
         carto_key=CARTO_KEY,
     )
